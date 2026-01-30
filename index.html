@@ -1,0 +1,1087 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>RunMate - Run Together, Anywhere</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        :root {
+            --electric-blue: #0066FF;
+            --electric-blue-dark: #0052CC;
+            --neon-green: #00FF88;
+            --neon-green-dark: #00CC6E;
+            --cyan: #00D4FF;
+            --red: #FF3B57;
+            --yellow: #FFB020;
+            --bg-primary: #FFFFFF;
+            --bg-secondary: #F7F9FB;
+            --bg-tertiary: #E8EDF2;
+            --text-primary: #0A1929;
+            --text-secondary: #5A6B7F;
+            --text-tertiary: #8A9BAD;
+            --border: #E2E8F0;
+            --shadow: rgba(0, 102, 255, 0.08);
+        }
+
+        body {
+            font-family: 'DM Sans', -apple-system, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        .app {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        .top-bar {
+            background: var(--bg-primary);
+            padding: 0.75rem 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+            z-index: 100;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.25rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--electric-blue), var(--cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .logo-icon {
+            width: 28px;
+            height: 28px;
+            background: linear-gradient(135deg, var(--electric-blue), var(--cyan));
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .top-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .icon-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .icon-btn:active {
+            transform: scale(0.95);
+            background: var(--bg-tertiary);
+        }
+
+        .icon-btn svg {
+            width: 20px;
+            height: 20px;
+            stroke: var(--text-primary);
+            fill: none;
+            stroke-width: 2;
+        }
+
+        .map-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+
+        .bottom-sheet {
+            position: fixed;
+            bottom: 60px;
+            left: 0;
+            right: 0;
+            background: white;
+            border-radius: 24px 24px 0 0;
+            box-shadow: 0 -4px 24px var(--shadow);
+            z-index: 2000;
+            transition: transform 0.3s ease-out;
+            max-height: calc(100vh - 120px);
+            overflow: hidden;
+        }
+
+        .bottom-sheet.collapsed {
+            transform: translateY(calc(100% - 80px));
+        }
+
+        .bottom-sheet.expanded {
+            transform: translateY(0);
+        }
+
+        .sheet-handle {
+            padding: 0.75rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .handle-bar {
+            width: 40px;
+            height: 4px;
+            background: var(--border);
+            border-radius: 2px;
+            margin-bottom: 0.75rem;
+        }
+
+        .sheet-preview {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            padding: 0 1rem;
+        }
+
+        .preview-text {
+            font-weight: 700;
+            font-size: 1rem;
+            background: linear-gradient(135deg, var(--electric-blue), var(--neon-green));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .quick-start-btn {
+            padding: 0.75rem 1.5rem;
+            background: linear-gradient(135deg, var(--neon-green), var(--neon-green-dark));
+            color: var(--text-primary);
+            border: none;
+            border-radius: 50px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            cursor: pointer;
+            box-shadow: 0 4px 16px rgba(0, 255, 136, 0.3);
+            transition: all 0.2s;
+            font-family: 'DM Sans', sans-serif;
+        }
+
+        .quick-start-btn:active {
+            transform: scale(0.95);
+        }
+
+        .sheet-content {
+            padding: 0 1rem 1.5rem;
+            overflow-y: auto;
+            max-height: calc(100vh - 200px);
+        }
+
+        .stats-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .activity-type {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .elapsed-time {
+            font-size: 2rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--electric-blue), var(--cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 1rem;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            display: block;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+            margin-top: 0.25rem;
+        }
+
+        .controls {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .btn-control {
+            flex: 1;
+            padding: 1rem;
+            border: none;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            cursor: pointer;
+            font-family: 'DM Sans', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            transition: all 0.2s;
+        }
+
+        .btn-control svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .btn-start {
+            background: linear-gradient(135deg, var(--neon-green), var(--neon-green-dark));
+            color: var(--text-primary);
+            box-shadow: 0 4px 20px rgba(0, 255, 136, 0.3);
+        }
+
+        .btn-start:active {
+            transform: scale(0.98);
+        }
+
+        .btn-pause {
+            background: linear-gradient(135deg, var(--electric-blue), var(--cyan));
+            color: white;
+            box-shadow: 0 4px 20px rgba(0, 102, 255, 0.3);
+        }
+
+        .btn-stop {
+            background: linear-gradient(135deg, var(--red), #FF1744);
+            color: white;
+            box-shadow: 0 4px 20px rgba(255, 59, 87, 0.3);
+        }
+
+        .comparison-panel {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            display: none;
+        }
+
+        .comparison-panel.active {
+            display: block;
+        }
+
+        .comparison-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .comparison-title {
+            font-size: 0.875rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            background: linear-gradient(135deg, var(--electric-blue), var(--neon-green));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .btn-close {
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            background: white;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-close svg {
+            width: 16px;
+            height: 16px;
+            stroke: var(--text-primary);
+        }
+
+        .runner-comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .runner-card {
+            background: white;
+            border-radius: 12px;
+            padding: 0.875rem;
+        }
+
+        .runner-card.you {
+            border: 2px solid var(--neon-green);
+        }
+
+        .runner-card.friend {
+            border: 2px solid var(--electric-blue);
+        }
+
+        .runner-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .runner-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--neon-green), var(--neon-green-dark));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: var(--text-primary);
+            font-size: 0.75rem;
+        }
+
+        .runner-card.friend .runner-avatar {
+            background: linear-gradient(135deg, var(--electric-blue), var(--cyan));
+            color: white;
+        }
+
+        .runner-name {
+            font-weight: 700;
+            font-size: 0.875rem;
+        }
+
+        .comparison-stats {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .comparison-stat {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .comparison-stat-label {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        .comparison-stat-value {
+            font-size: 1rem;
+            font-weight: 700;
+        }
+
+        .friends-panel {
+            position: absolute;
+            bottom: 150px;
+            right: 1rem;
+            z-index: 1000;
+            background: white;
+            border-radius: 20px;
+            padding: 1rem;
+            box-shadow: 0 8px 32px var(--shadow);
+            width: 300px;
+            max-height: 400px;
+            overflow-y: auto;
+            display: none;
+        }
+
+        .friends-panel.active {
+            display: block;
+            animation: slideUp 0.3s ease-out;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .friends-header {
+            font-size: 0.875rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .friend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            border-radius: 12px;
+            margin-bottom: 0.5rem;
+            background: var(--bg-secondary);
+        }
+
+        .friend-avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667EEA, #764BA2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: white;
+            position: relative;
+            font-size: 0.875rem;
+        }
+
+        .status-dot {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--neon-green);
+            border: 2px solid white;
+            box-shadow: 0 0 8px var(--neon-green);
+        }
+
+        .status-dot.running {
+            background: var(--electric-blue);
+            box-shadow: 0 0 8px var(--electric-blue);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.1); }
+        }
+
+        .friend-info {
+            flex: 1;
+        }
+
+        .friend-name {
+            font-weight: 700;
+            font-size: 0.875rem;
+        }
+
+        .friend-status {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .btn-action {
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            background: linear-gradient(135deg, var(--electric-blue), var(--cyan));
+            color: white;
+            border: none;
+            font-weight: 700;
+            font-size: 0.75rem;
+            cursor: pointer;
+            font-family: 'DM Sans', sans-serif;
+            box-shadow: 0 2px 8px rgba(0, 102, 255, 0.2);
+        }
+
+        .btn-action:active {
+            transform: scale(0.95);
+        }
+
+        .btn-action.secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            box-shadow: none;
+        }
+
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: space-around;
+            padding: 0.5rem 0 calc(0.5rem + env(safe-area-inset-bottom));
+            z-index: 1000;
+        }
+
+        .nav-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.5rem;
+            border: none;
+            background: none;
+            cursor: pointer;
+            color: var(--text-tertiary);
+            transition: color 0.2s;
+            font-family: 'DM Sans', sans-serif;
+        }
+
+        .nav-item.active {
+            color: var(--electric-blue);
+        }
+
+        .nav-item svg {
+            width: 24px;
+            height: 24px;
+            stroke-width: 2;
+        }
+
+        .nav-label {
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: calc(60px + 1rem);
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: linear-gradient(135deg, var(--electric-blue), var(--cyan));
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            z-index: 4000;
+            transition: transform 0.3s ease-out;
+            box-shadow: 0 8px 32px rgba(0, 102, 255, 0.4);
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <div class="top-bar">
+            <div class="logo">
+                <div class="logo-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
+                        <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                        <path d="M2 17l10 5 10-5"/>
+                        <path d="M2 12l10 5 10-5"/>
+                    </svg>
+                </div>
+                RunMate
+            </div>
+            <div class="top-actions">
+                <button class="icon-btn" onclick="toggleFriends()">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <div class="map-container">
+            <div id="map"></div>
+
+            <div class="friends-panel" id="friendsPanel">
+                <div class="friends-header">Online Friends</div>
+                <div class="friend-item">
+                    <div class="friend-avatar">
+                        SM
+                        <div class="status-dot running"></div>
+                    </div>
+                    <div class="friend-info">
+                        <div class="friend-name">Sarah Miller</div>
+                        <div class="friend-status">Running • 3.2 mi</div>
+                    </div>
+                    <button class="btn-action" onclick="joinRun('Sarah Miller')">Join</button>
+                </div>
+                <div class="friend-item">
+                    <div class="friend-avatar" style="background: linear-gradient(135deg, #667EEA, #764BA2);">
+                        MJ
+                        <div class="status-dot"></div>
+                    </div>
+                    <div class="friend-info">
+                        <div class="friend-name">Mike Johnson</div>
+                        <div class="friend-status">Online</div>
+                    </div>
+                    <button class="btn-action secondary" onclick="inviteFriend('Mike')">Invite</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="bottom-sheet collapsed" id="bottomSheet">
+            <div class="sheet-handle" onclick="toggleSheet()">
+                <div class="handle-bar"></div>
+                <div class="sheet-preview">
+                    <div class="preview-text">Tap to start running</div>
+                    <button class="quick-start-btn" onclick="quickStart(event)">Start</button>
+                </div>
+            </div>
+
+            <div class="sheet-content">
+                <div class="stats-header">
+                    <div class="activity-type">Running</div>
+                    <div class="elapsed-time" id="elapsedTime">00:00</div>
+                </div>
+
+                <div class="comparison-panel" id="comparisonPanel">
+                    <div class="comparison-header">
+                        <div class="comparison-title">Running Together</div>
+                        <button class="btn-close" onclick="closeComparison()">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="18" y1="6" x2="6" y2="18"/>
+                                <line x1="6" y1="6" x2="18" y2="18"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="runner-comparison">
+                        <div class="runner-card you">
+                            <div class="runner-header">
+                                <div class="runner-avatar">YOU</div>
+                                <div class="runner-name">You</div>
+                            </div>
+                            <div class="comparison-stats">
+                                <div class="comparison-stat">
+                                    <span class="comparison-stat-label">Distance</span>
+                                    <span class="comparison-stat-value" id="yourDistance">0.00 mi</span>
+                                </div>
+                                <div class="comparison-stat">
+                                    <span class="comparison-stat-label">Pace</span>
+                                    <span class="comparison-stat-value" id="yourPace">0:00 /mi</span>
+                                </div>
+                                <div class="comparison-stat">
+                                    <span class="comparison-stat-label">Time</span>
+                                    <span class="comparison-stat-value" id="yourTime">00:00</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="runner-card friend">
+                            <div class="runner-header">
+                                <div class="runner-avatar">SM</div>
+                                <div class="runner-name" id="friendName">Sarah M.</div>
+                            </div>
+                            <div class="comparison-stats">
+                                <div class="comparison-stat">
+                                    <span class="comparison-stat-label">Distance</span>
+                                    <span class="comparison-stat-value" id="friendDistance">0.00 mi</span>
+                                </div>
+                                <div class="comparison-stat">
+                                    <span class="comparison-stat-label">Pace</span>
+                                    <span class="comparison-stat-value" id="friendPace">0:00 /mi</span>
+                                </div>
+                                <div class="comparison-stat">
+                                    <span class="comparison-stat-label">Time</span>
+                                    <span class="comparison-stat-value" id="friendTime">00:00</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stats-row">
+                    <div class="stat-item">
+                        <span class="stat-value" id="distance">0.00</span>
+                        <span class="stat-label">Miles</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value" id="pace">0:00</span>
+                        <span class="stat-label">Pace /mi</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value" id="calories">0</span>
+                        <span class="stat-label">Calories</span>
+                    </div>
+                </div>
+
+                <div class="controls" id="controls">
+                    <button class="btn-control btn-start" onclick="startRun()">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <polygon points="5 3 19 12 5 21 5 3"/>
+                        </svg>
+                        Start Run
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="bottom-nav">
+            <button class="nav-item active">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+                </svg>
+                <span class="nav-label">Record</span>
+            </button>
+            <button class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <rect x="2" y="7" width="20" height="15" rx="2" ry="2"/>
+                    <polyline points="2 7 12 13 22 7"/>
+                </svg>
+                <span class="nav-label">Feed</span>
+            </button>
+            <button class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/>
+                    <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/>
+                    <path d="M4 22h16"/>
+                    <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/>
+                    <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/>
+                    <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>
+                </svg>
+                <span class="nav-label">Rankings</span>
+            </button>
+            <button class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                </svg>
+                <span class="nav-label">You</span>
+            </button>
+        </div>
+
+        <div class="toast" id="toast"></div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        let map, userMarker, friendMarker, routeLine;
+        let isRunning = false, isPaused = false;
+        let runDistance = 0, runTime = 0, runInterval, moveInterval;
+        let friendDistance = 0, friendTime = 0;
+        let routeCoords = [];
+        let comparisonActive = false;
+        let sheetExpanded = false;
+
+        function initMap() {
+            const coords = [40.7580, -73.9855];
+            map = L.map('map', {
+                zoomControl: false,
+                attributionControl: false
+            }).setView(coords, 14);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19
+            }).addTo(map);
+
+            const userIcon = L.divIcon({
+                className: 'custom-marker',
+                html: '<div style="width: 32px; height: 32px; background: linear-gradient(135deg, #00FF88, #00CC6E); border: 3px solid white; border-radius: 50%; box-shadow: 0 4px 16px rgba(0,255,136,0.4); display: flex; align-items: center; justify-content: center; font-weight: 800; color: #0A1929; font-size: 0.7rem;">YOU</div>',
+                iconSize: [32, 32],
+                iconAnchor: [16, 16]
+            });
+
+            userMarker = L.marker(coords, { icon: userIcon }).addTo(map);
+            routeLine = L.polyline([], {
+                color: '#00FF88',
+                weight: 5,
+                opacity: 0.8
+            }).addTo(map);
+
+            showNotification('Welcome to RunMate! 👋');
+        }
+
+        function toggleSheet() {
+            const sheet = document.getElementById('bottomSheet');
+            sheetExpanded = !sheetExpanded;
+            
+            if (sheetExpanded) {
+                sheet.classList.remove('collapsed');
+                sheet.classList.add('expanded');
+            } else {
+                sheet.classList.remove('expanded');
+                sheet.classList.add('collapsed');
+            }
+        }
+
+        function quickStart(event) {
+            event.stopPropagation();
+            if (!sheetExpanded) {
+                toggleSheet();
+                setTimeout(() => startRun(), 300);
+            } else {
+                startRun();
+            }
+        }
+
+        function startRun() {
+            if (isRunning) return;
+            
+            if (!sheetExpanded) {
+                toggleSheet();
+                setTimeout(() => startRun(), 300);
+                return;
+            }
+
+            isRunning = true;
+            isPaused = false;
+            runDistance = 0;
+            runTime = 0;
+            routeCoords = [];
+
+            document.getElementById('controls').innerHTML = `
+                <button class="btn-control btn-pause" onclick="pauseRun()">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                        <rect x="6" y="4" width="4" height="16"/>
+                        <rect x="14" y="4" width="4" height="16"/>
+                    </svg>
+                    Pause
+                </button>
+                <button class="btn-control btn-stop" onclick="stopRun()">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                        <rect x="6" y="6" width="12" height="12"/>
+                    </svg>
+                    Stop
+                </button>
+            `;
+
+            runInterval = setInterval(updateStats, 1000);
+            simulateMovement();
+            showNotification('Run started! 🏃‍♂️');
+        }
+
+        function pauseRun() {
+            if (!isRunning) return;
+            isPaused = !isPaused;
+            const pauseBtn = document.querySelector('.btn-pause');
+
+            if (isPaused) {
+                clearInterval(runInterval);
+                clearInterval(moveInterval);
+                pauseBtn.innerHTML = `
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                        <polygon points="5 3 19 12 5 21 5 3"/>
+                    </svg>
+                    Resume
+                `;
+                showNotification('Run paused ⏸️');
+            } else {
+                runInterval = setInterval(updateStats, 1000);
+                simulateMovement();
+                pauseBtn.innerHTML = `
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                        <rect x="6" y="4" width="4" height="16"/>
+                        <rect x="14" y="4" width="4" height="16"/>
+                    </svg>
+                    Pause
+                `;
+                showNotification('Run resumed! ▶️');
+            }
+        }
+
+        function stopRun() {
+            if (!isRunning) return;
+            isRunning = false;
+            isPaused = false;
+            clearInterval(runInterval);
+            clearInterval(moveInterval);
+
+            document.getElementById('controls').innerHTML = `
+                <button class="btn-control btn-start" onclick="startRun()">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                        <polygon points="5 3 19 12 5 21 5 3"/>
+                    </svg>
+                    Start Run
+                </button>
+            `;
+
+            alert(`Great run! 🎉\n\nDistance: ${runDistance.toFixed(2)} mi\nTime: ${formatTime(runTime)}`);
+
+            runDistance = 0;
+            runTime = 0;
+            routeCoords = [];
+            routeLine.setLatLngs([]);
+            updateStats();
+        }
+
+        function updateStats() {
+            if (!isPaused && isRunning) {
+                runTime++;
+                runDistance += (0.11 / 60);
+            }
+
+            document.getElementById('elapsedTime').textContent = formatTime(runTime);
+            document.getElementById('distance').textContent = runDistance.toFixed(2);
+            document.getElementById('pace').textContent = calculatePace();
+            document.getElementById('calories').textContent = Math.floor(runDistance * 100);
+
+            if (comparisonActive) {
+                document.getElementById('yourDistance').textContent = runDistance.toFixed(2) + ' mi';
+                document.getElementById('yourPace').textContent = calculatePace() + ' /mi';
+                document.getElementById('yourTime').textContent = formatTime(runTime);
+
+                if (!isPaused && isRunning) {
+                    friendTime++;
+                    friendDistance += (0.12 / 60);
+                }
+                document.getElementById('friendDistance').textContent = friendDistance.toFixed(2) + ' mi';
+                document.getElementById('friendPace').textContent = calculateFriendPace() + ' /mi';
+                document.getElementById('friendTime').textContent = formatTime(friendTime);
+            }
+        }
+
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+        }
+
+        function calculatePace() {
+            if (runDistance === 0) return '0:00';
+            const paceMinutes = (runTime / 60) / runDistance;
+            const min = Math.floor(paceMinutes);
+            const sec = Math.floor((paceMinutes - min) * 60);
+            return `${min}:${String(sec).padStart(2, '0')}`;
+        }
+
+        function calculateFriendPace() {
+            if (friendDistance === 0) return '0:00';
+            const paceMinutes = (friendTime / 60) / friendDistance;
+            const min = Math.floor(paceMinutes);
+            const sec = Math.floor((paceMinutes - min) * 60);
+            return `${min}:${String(sec).padStart(2, '0')}`;
+        }
+
+        function simulateMovement() {
+            moveInterval = setInterval(() => {
+                if (!isRunning || isPaused) {
+                    clearInterval(moveInterval);
+                    return;
+                }
+
+                const pos = userMarker.getLatLng();
+                const newLat = pos.lat + (Math.random() - 0.5) * 0.0012;
+                const newLng = pos.lng + (Math.random() - 0.5) * 0.0012;
+
+                userMarker.setLatLng([newLat, newLng]);
+                routeCoords.push([newLat, newLng]);
+                routeLine.setLatLngs(routeCoords);
+                map.panTo([newLat, newLng], { animate: true });
+
+                if (comparisonActive && friendMarker) {
+                    const friendPos = friendMarker.getLatLng();
+                    const newFriendLat = friendPos.lat + (Math.random() - 0.5) * 0.0013;
+                    const newFriendLng = friendPos.lng + (Math.random() - 0.5) * 0.0013;
+                    friendMarker.setLatLng([newFriendLat, newFriendLng]);
+                }
+            }, 2500);
+        }
+
+        function toggleFriends() {
+            document.getElementById('friendsPanel').classList.toggle('active');
+        }
+
+        function joinRun(name) {
+            showNotification(`Joining ${name}'s run...`);
+
+            const friendIcon = L.divIcon({
+                className: 'custom-marker',
+                html: '<div style="width: 32px; height: 32px; background: linear-gradient(135deg, #0066FF, #00D4FF); border: 3px solid white; border-radius: 50%; box-shadow: 0 4px 16px rgba(0,102,255,0.4); display: flex; align-items: center; justify-content: center; font-weight: 800; color: white; font-size: 0.7rem;">SM</div>',
+                iconSize: [32, 32],
+                iconAnchor: [16, 16]
+            });
+
+            const userPos = userMarker.getLatLng();
+            friendMarker = L.marker([userPos.lat + 0.004, userPos.lng + 0.004], { icon: friendIcon }).addTo(map);
+
+            setTimeout(() => {
+                showNotification(`Connected with ${name}! 🎉`);
+                document.getElementById('friendsPanel').classList.remove('active');
+                
+                comparisonActive = true;
+                friendDistance = runDistance;
+                friendTime = runTime;
+                document.getElementById('friendName').textContent = name;
+                document.getElementById('comparisonPanel').classList.add('active');
+            }, 1500);
+        }
+
+        function inviteFriend(name) {
+            showNotification(`Invitation sent to ${name}! ✉️`);
+        }
+
+        function closeComparison() {
+            comparisonActive = false;
+            document.getElementById('comparisonPanel').classList.remove('active');
+            if (friendMarker) {
+                map.removeLayer(friendMarker);
+                friendMarker = null;
+            }
+        }
+
+        function showNotification(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        window.addEventListener('load', () => {
+            initMap();
+            setTimeout(() => {
+                map.invalidateSize();
+            }, 100);
+        });
+
+        window.addEventListener('resize', () => {
+            map.invalidateSize();
+        });
+    </script>
+</body>
+</html>
