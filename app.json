@@ -1,0 +1,75 @@
+{
+  "expo": {
+    "name": "RunMate",
+    "slug": "runmate",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#070711"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.runmate.app",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "RunMate needs your location to track your runs.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "RunMate needs background location to track runs even when the app is minimized.",
+        "NSLocationAlwaysUsageDescription": "RunMate needs background location to track your runs.",
+        "NSHealthShareUsageDescription": "RunMate reads health data including heart rate from Apple Watch to enhance your running experience.",
+        "NSHealthUpdateUsageDescription": "RunMate saves your runs to Apple Health.",
+        "NSMotionUsageDescription": "RunMate uses motion data to improve step counting accuracy.",
+        "UIBackgroundModes": ["location", "fetch"]
+      },
+      "entitlements": {
+        "com.apple.developer.healthkit": true,
+        "com.apple.developer.healthkit.access": []
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#070711"
+      },
+      "package": "com.runmate.app",
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_BACKGROUND_LOCATION",
+        "ACTIVITY_RECOGNITION",
+        "FOREGROUND_SERVICE"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Allow RunMate to access your location to track your runs.",
+          "locationAlwaysPermission": "Allow RunMate to access your location in the background to track your runs.",
+          "isAndroidBackgroundLocationEnabled": true,
+          "isAndroidForegroundServiceEnabled": true
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#070711",
+          "image": "./assets/splash.png",
+          "resizeMode": "contain"
+        }
+      ]
+    ],
+    "scheme": "runmate",
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
