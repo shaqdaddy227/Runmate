@@ -15,6 +15,12 @@ config.resolver.resolveRequest = (context, moduleName, platform) => {
       type: 'sourceFile',
     };
   }
+  if (moduleName === 'react-native-health') {
+    return {
+      filePath: path.resolve(__dirname, 'mocks/react-native-health.js'),
+      type: 'sourceFile',
+    };
+  }
   if (originalResolveRequest) {
     return originalResolveRequest(context, moduleName, platform);
   }
