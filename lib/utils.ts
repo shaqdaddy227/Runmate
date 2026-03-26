@@ -131,23 +131,84 @@ export function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
 }
 
+interface AchievementMeta {
+  label: string;
+  description: string;
+  icon: string;
+  iconColor: string;
+  gradientStart: string;
+  gradientEnd: string;
+}
+
 /**
- * Get achievement metadata
+ * Get achievement metadata — uses Ionicons, no emojis.
  */
-export function getAchievementMeta(type: string): { label: string; emoji: string; description: string } {
-  const map: Record<string, { label: string; emoji: string; description: string }> = {
-    first_run: { label: 'First Step', emoji: '👟', description: 'Completed your first run' },
-    run_5k: { label: '5K Club', emoji: '🏃', description: 'Ran 5 kilometers in one session' },
-    run_10k: { label: '10K Strong', emoji: '⚡', description: 'Ran 10 kilometers in one session' },
-    run_half_marathon: { label: 'Half Warrior', emoji: '🏅', description: 'Completed a half marathon' },
-    run_marathon: { label: 'Marathon Legend', emoji: '🏆', description: 'Completed a full marathon' },
-    streak_7: { label: '7-Day Streak', emoji: '🔥', description: 'Ran 7 days in a row' },
-    streak_30: { label: '30-Day Warrior', emoji: '💪', description: 'Ran 30 days in a row' },
-    total_100k: { label: '100K Total', emoji: '🌍', description: 'Ran 100km lifetime total' },
-    total_500k: { label: '500K Legend', emoji: '🚀', description: 'Ran 500km lifetime total' },
-    virtual_run: { label: 'Social Runner', emoji: '🤝', description: 'Completed a virtual run with friends' },
-    early_bird: { label: 'Early Bird', emoji: '🌅', description: 'Completed a run before 7am' },
-    night_runner: { label: 'Night Owl', emoji: '🌙', description: 'Completed a run after 10pm' },
+export function getAchievementMeta(type: string): AchievementMeta {
+  const map: Record<string, AchievementMeta> = {
+    first_run: {
+      label: 'First Step', description: 'Completed your first run',
+      icon: 'footsteps-outline', iconColor: '#00F5A0',
+      gradientStart: 'rgba(0,245,160,0.15)', gradientEnd: 'rgba(0,245,160,0.05)',
+    },
+    run_5k: {
+      label: '5K Club', description: 'Ran 5 kilometers in one session',
+      icon: 'flash-outline', iconColor: '#00C9FF',
+      gradientStart: 'rgba(0,201,255,0.15)', gradientEnd: 'rgba(0,201,255,0.05)',
+    },
+    run_10k: {
+      label: '10K Strong', description: 'Ran 10 kilometers in one session',
+      icon: 'trending-up-outline', iconColor: '#8B5CF6',
+      gradientStart: 'rgba(139,92,246,0.2)', gradientEnd: 'rgba(139,92,246,0.05)',
+    },
+    run_half_marathon: {
+      label: 'Half Warrior', description: 'Completed a half marathon',
+      icon: 'medal-outline', iconColor: '#FFD700',
+      gradientStart: 'rgba(255,215,0,0.15)', gradientEnd: 'rgba(255,215,0,0.05)',
+    },
+    run_marathon: {
+      label: 'Marathon', description: 'Completed a full marathon',
+      icon: 'trophy-outline', iconColor: '#FF8C00',
+      gradientStart: 'rgba(255,140,0,0.2)', gradientEnd: 'rgba(255,140,0,0.05)',
+    },
+    streak_7: {
+      label: '7-Day Streak', description: 'Ran 7 days in a row',
+      icon: 'flame-outline', iconColor: '#FF4B5C',
+      gradientStart: 'rgba(255,75,92,0.15)', gradientEnd: 'rgba(255,75,92,0.05)',
+    },
+    streak_30: {
+      label: '30-Day Streak', description: 'Ran 30 days in a row',
+      icon: 'flame', iconColor: '#FF4B5C',
+      gradientStart: 'rgba(255,75,92,0.25)', gradientEnd: 'rgba(255,75,92,0.08)',
+    },
+    total_100k: {
+      label: '100K Total', description: 'Ran 100km lifetime total',
+      icon: 'earth-outline', iconColor: '#00C9FF',
+      gradientStart: 'rgba(0,201,255,0.15)', gradientEnd: 'rgba(0,201,255,0.05)',
+    },
+    total_500k: {
+      label: '500K Legend', description: 'Ran 500km lifetime total',
+      icon: 'rocket-outline', iconColor: '#8B5CF6',
+      gradientStart: 'rgba(139,92,246,0.25)', gradientEnd: 'rgba(139,92,246,0.08)',
+    },
+    virtual_run: {
+      label: 'Social Runner', description: 'Completed a virtual run with friends',
+      icon: 'people-outline', iconColor: '#00F5A0',
+      gradientStart: 'rgba(0,245,160,0.15)', gradientEnd: 'rgba(0,245,160,0.05)',
+    },
+    early_bird: {
+      label: 'Early Bird', description: 'Completed a run before 7am',
+      icon: 'sunny-outline', iconColor: '#FFD700',
+      gradientStart: 'rgba(255,215,0,0.15)', gradientEnd: 'rgba(255,215,0,0.05)',
+    },
+    night_runner: {
+      label: 'Night Owl', description: 'Completed a run after 10pm',
+      icon: 'moon-outline', iconColor: '#8B5CF6',
+      gradientStart: 'rgba(139,92,246,0.15)', gradientEnd: 'rgba(139,92,246,0.05)',
+    },
   };
-  return map[type] ?? { label: type, emoji: '🎖️', description: 'Special achievement' };
+  return map[type] ?? {
+    label: type, description: 'Special achievement',
+    icon: 'ribbon-outline', iconColor: '#00F5A0',
+    gradientStart: 'rgba(0,245,160,0.15)', gradientEnd: 'rgba(0,245,160,0.05)',
+  };
 }

@@ -141,7 +141,7 @@ export default function ActivityCard({ run, onCommentPress }: ActivityCardProps)
           style={[styles.actionBtn, styles.kudosBtn]}
           activeOpacity={0.7}
         >
-          <Text style={styles.kudosEmoji}>👊</Text>
+          <Ionicons name="flash" size={14} color={COLORS.primary} />
           <Text style={styles.kudosText}>Kudos</Text>
         </TouchableOpacity>
       </View>
@@ -311,9 +311,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     borderWidth: 1,
     borderColor: COLORS.primary,
-  },
-  kudosEmoji: {
-    fontSize: 14,
   },
   kudosText: {
     fontSize: FONT_SIZE.sm,
