@@ -1,10 +1,10 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
-import { View, Text, StyleSheet, Platform } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { COLORS, FONT_SIZE, FONT_WEIGHT } from '../../constants/theme';
+import { COLORS, FONT_WEIGHT } from '../../constants/theme';
 
 type IconName = keyof typeof Ionicons.glyphMap;
 
@@ -18,14 +18,15 @@ interface TabIconProps {
 function TabIcon({ focused, name, outlineName, label }: TabIconProps) {
   return (
     <View style={styles.tabItem}>
-      <View style={[styles.iconWrapper, focused && styles.iconWrapperActive]}>
-        <Ionicons
-          name={focused ? name : outlineName}
-          size={22}
-          color={focused ? COLORS.bg : COLORS.textMuted}
-        />
-      </View>
-      <Text style={[styles.tabLabel, focused && styles.tabLabelActive]}>{label}</Text>
+      {focused && <View style={styles.indicator} />}
+      <Ionicons
+        name={focused ? name : outlineName}
+        size={23}
+        color={focused ? COLORS.primary : COLORS.textMuted}
+      />
+      <Text style={[styles.tabLabel, focused && styles.tabLabelActive]}>
+        {label}
+      </Text>
     </View>
   );
 }
@@ -42,12 +43,12 @@ export default function TabsLayout() {
           backgroundColor: 'transparent',
           borderTopWidth: 0,
           elevation: 0,
-          height: 64 + insets.bottom,
+          height: 58 + insets.bottom,
           paddingBottom: insets.bottom,
         },
         tabBarBackground: () => (
           <BlurView
-            intensity={80}
+            intensity={95}
             tint="dark"
             style={[StyleSheet.absoluteFillObject, styles.tabBarBg]}
           />
@@ -75,7 +76,7 @@ export default function TabsLayout() {
         name="friends"
         options={{
           tabBarIcon: ({ focused }) => (
-            <TabIcon focused={focused} name="people" outlineName="people-outline" label="Friends" />
+            <TabIcon focused={focused} name="people" outlineName="people-outline" label="Social" />
           ),
         }}
       />
@@ -103,27 +104,32 @@ const styles = StyleSheet.create({
   tabBarBg: {
     borderTopWidth: 1,
     borderTopColor: 'rgba(255,255,255,0.06)',
-    backgroundColor: 'rgba(7,7,17,0.92)',
+    backgroundColor: 'rgba(5,5,14,0.88)',
   },
   tabItem: {
     alignItems: 'center',
-    gap: 4,
-    paddingTop: 8,
+    gap: 3,
+    paddingTop: 10,
+    width: 54,
   },
-  iconWrapper: {
-    width: 40,
-    height: 32,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  iconWrapperActive: {
+  indicator: {
+    position: 'absolute',
+    top: 0,
+    width: 20,
+    height: 2,
+    borderRadius: 1,
     backgroundColor: COLORS.primary,
+    shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 6,
   },
   tabLabel: {
-    fontSize: 10,
+    fontSize: 9,
     color: COLORS.textMuted,
     fontWeight: FONT_WEIGHT.medium,
+    letterSpacing: 0.3,
+    textTransform: 'uppercase',
   },
   tabLabelActive: {
     color: COLORS.primary,

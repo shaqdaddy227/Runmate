@@ -4,6 +4,8 @@ export const COLORS = {
   bgCard: '#0F0F1A',
   bgInput: '#13131F',
   bgOverlay: 'rgba(7, 7, 17, 0.85)',
+  surface: '#12121F',
+  surfaceActive: '#1A1A2E',
 
   // Borders
   border: '#1A1A2E',
@@ -30,6 +32,9 @@ export const COLORS = {
   dangerGlow: 'rgba(255, 75, 92, 0.2)',
   warning: '#FFD700',
   success: '#00F5A0',
+  gold: '#FFD700',
+  silver: '#C0C0C0',
+  bronze: '#CD7F32',
 
   // Text
   text: '#FFFFFF',

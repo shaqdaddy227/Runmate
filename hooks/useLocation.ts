@@ -19,17 +19,27 @@ export function useLocation() {
   const watchRef = useRef<Location.LocationSubscription | null>(null);
 
   const requestPermissions = useCallback(async (): Promise<boolean> => {
-    const { status: fgStatus } = await Location.requestForegroundPermissionsAsync();
-    if (fgStatus !== 'granted') {
-      setState((s) => ({ ...s, hasPermission: false, error: 'Location permission denied' }));
+    try {
+      // Check if already granted first
+      const { status: existing } = await Location.getForegroundPermissionsAsync();
+      if (existing === 'granted') {
+        setState((s) => ({ ...s, hasPermission: true }));
+        return true;
+      }
+
+      const { status: fgStatus } = await Location.requestForegroundPermissionsAsync();
+      if (fgStatus !== 'granted') {
+        setState((s) => ({ ...s, hasPermission: false, error: 'Location permission denied' }));
+        return false;
+      }
+
+      setState((s) => ({ ...s, hasPermission: true }));
+      return true;
+    } catch (err) {
+      console.warn('[Location] Permission request failed:', err);
+      setState((s) => ({ ...s, hasPermission: false }));
       return false;
     }
-
-    // Request background permission for run tracking
-    const { status: bgStatus } = await Location.requestBackgroundPermissionsAsync();
-    const hasPermission = bgStatus === 'granted';
-    setState((s) => ({ ...s, hasPermission: true }));
-    return true;
   }, []);
 
   // Get initial position
@@ -57,8 +67,8 @@ export function useLocation() {
       const subscription = await Location.watchPositionAsync(
         {
           accuracy: Location.Accuracy.BestForNavigation,
-          distanceInterval: 5,         // update every 5 meters
-          timeInterval: 3000,           // or every 3 seconds
+          distanceInterval: 5,
+          timeInterval: 3000,
           mayShowUserSettingsDialog: true,
         },
         (location) => {
@@ -88,9 +98,15 @@ export function useLocation() {
   }, []);
 
   useEffect(() => {
-    requestPermissions().then((granted) => {
-      if (granted) getInitialPosition();
-    });
+    // Only check existing permission status on mount — do not prompt
+    Location.getForegroundPermissionsAsync()
+      .then(({ status }) => {
+        if (status === 'granted') {
+          setState((s) => ({ ...s, hasPermission: true }));
+          getInitialPosition();
+        }
+      })
+      .catch(() => {});
 
     return () => {
       watchRef.current?.remove();

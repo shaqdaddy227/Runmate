@@ -5,7 +5,6 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -16,13 +15,9 @@ import { useAuth } from '../../hooks/useAuth';
 import { useLocation } from '../../hooks/useLocation';
 import { fetchUserRuns } from '../../lib/supabase';
 import { formatDistanceWithUnit, formatDuration, formatPace, timeAgo } from '../../lib/utils';
-import Card from '../../components/ui/Card';
 import Avatar from '../../components/ui/Avatar';
-import WeeklyChart from '../../components/profile/WeeklyChart';
 import { COLORS, FONT_SIZE, FONT_WEIGHT, SPACING, RADIUS, GRADIENTS } from '../../constants/theme';
 import { Run } from '../../types';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 function buildWeekData(runs: Run[]) {
   const days = Array(7).fill(0).map(() => ({ distance_km: 0 }));
@@ -44,6 +39,13 @@ function buildWeekData(runs: Run[]) {
   return days;
 }
 
+function getGreeting() {
+  const h = new Date().getHours();
+  if (h < 12) return 'Good morning';
+  if (h < 17) return 'Good afternoon';
+  return 'Good evening';
+}
+
 export default function HomeScreen() {
   const router = useRouter();
   const { profile } = useAuth();
@@ -58,11 +60,12 @@ export default function HomeScreen() {
   const weekData = buildWeekData(runs as Run[]);
   const weekKm = weekData.reduce((s, d) => s + d.distance_km, 0);
   const weekRuns = (runs as Run[]).filter((r) => {
-    const d = new Date(r.started_at);
-    const now = new Date();
-    const diff = (now.getTime() - d.getTime()) / 86400000;
+    const diff = (Date.now() - new Date(r.started_at).getTime()) / 86400000;
     return diff < 7;
   }).length;
+
+  const goalKm = profile?.weekly_goal_km ?? 0;
+  const goalProgress = goalKm > 0 ? Math.min(weekKm / goalKm, 1) : 0;
 
   const handleStartRun = useCallback(async () => {
     if (!hasPermission) {
@@ -75,23 +78,17 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Background glow */}
-      <View style={styles.bgGlow} pointerEvents="none" />
-
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {/* Header */}
+        {/* ── HEADER ── */}
         <View style={styles.header}>
           <View>
-            <Text style={styles.greeting}>Good {getTimeOfDay()},</Text>
+            <Text style={styles.greeting}>{getGreeting()}</Text>
             <Text style={styles.name}>{firstName}</Text>
           </View>
-          <TouchableOpacity
-            onPress={() => router.push('/(tabs)/profile')}
-            activeOpacity={0.8}
-          >
+          <TouchableOpacity onPress={() => router.push('/(tabs)/profile')} activeOpacity={0.8}>
             <Avatar
               uri={profile?.avatar_url}
               name={profile?.full_name ?? profile?.username}
@@ -101,259 +98,349 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* This Week Summary */}
-        <Card style={styles.weekCard}>
-          <View style={styles.weekStatsRow}>
-            <View style={styles.weekStat}>
-              <Text style={styles.weekStatValue}>{weekKm.toFixed(1)}</Text>
-              <Text style={styles.weekStatLabel}>km this week</Text>
-            </View>
-            <View style={styles.weekStatDivider} />
-            <View style={styles.weekStat}>
-              <Text style={styles.weekStatValue}>{weekRuns}</Text>
-              <Text style={styles.weekStatLabel}>runs</Text>
-            </View>
-            <View style={styles.weekStatDivider} />
-            <View style={styles.weekStat}>
-              <Text style={styles.weekStatValue}>
-                {profile?.total_runs ?? 0}
-              </Text>
-              <Text style={styles.weekStatLabel}>total runs</Text>
-            </View>
-          </View>
-
-          {/* Weekly goal progress */}
-          {(profile?.weekly_goal_km ?? 0) > 0 && (
-            <View style={styles.goalSection}>
-              <View style={styles.goalHeader}>
-                <Text style={styles.goalLabel}>Weekly Goal</Text>
-                <Text style={styles.goalNumbers}>
-                  {weekKm.toFixed(1)} / {profile!.weekly_goal_km} km
-                </Text>
-              </View>
-              <View style={styles.goalTrack}>
-                <LinearGradient
-                  colors={GRADIENTS.primary}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={[
-                    styles.goalFill,
-                    {
-                      width: `${Math.min(
-                        (weekKm / profile!.weekly_goal_km) * 100,
-                        100,
-                      )}%`,
-                    },
-                  ]}
-                />
-              </View>
-            </View>
-          )}
-
-          <WeeklyChart data={weekData} goalKm={profile?.weekly_goal_km ?? 5} />
-        </Card>
-
-        {/* START RUN button */}
+        {/* ── START RUN HERO ── */}
         <TouchableOpacity
-          style={styles.startRunBtn}
+          style={styles.heroCard}
           onPress={handleStartRun}
           activeOpacity={0.88}
         >
           <LinearGradient
-            colors={GRADIENTS.primary}
+            colors={['rgba(0,245,160,0.10)', 'rgba(0,201,255,0.04)', 'transparent']}
             start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={styles.startRunGradient}
-          >
-            <View style={styles.startRunIconWrapper}>
-              <Ionicons name="play" size={28} color="#070711" />
+            end={{ x: 1, y: 1 }}
+            style={StyleSheet.absoluteFillObject}
+          />
+          <View style={styles.heroContent}>
+            {/* Left: this week stats */}
+            <View style={styles.heroStats}>
+              <Text style={styles.heroWeekLabel}>THIS WEEK</Text>
+              <Text style={styles.heroKmValue}>{weekKm.toFixed(1)}</Text>
+              <Text style={styles.heroKmUnit}>km</Text>
+              <View style={styles.heroStatsDivider} />
+              <Text style={styles.heroRunCount}>{weekRuns}</Text>
+              <Text style={styles.heroRunLabel}>{weekRuns === 1 ? 'run' : 'runs'}</Text>
             </View>
-            <View>
-              <Text style={styles.startRunTitle}>Start Run</Text>
-              <Text style={styles.startRunSub}>Tap to begin tracking</Text>
+
+            {/* Vertical separator */}
+            <View style={styles.heroSeparator} />
+
+            {/* Right: play CTA */}
+            <View style={styles.heroAction}>
+              <View style={styles.heroPlayRing}>
+                <LinearGradient
+                  colors={GRADIENTS.primary}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.heroPlayGradient}
+                >
+                  <Ionicons name="play" size={30} color={COLORS.bg} />
+                </LinearGradient>
+              </View>
+              <Text style={styles.heroStartLabel}>START RUN</Text>
+              <Text style={styles.heroStartSub}>Tap to begin</Text>
             </View>
-            <Ionicons name="chevron-forward" size={20} color="rgba(7,7,17,0.6)" style={{ marginLeft: 'auto' }} />
-          </LinearGradient>
+          </View>
         </TouchableOpacity>
 
-        {/* Quick actions */}
+        {/* ── GOAL PROGRESS ── */}
+        {goalKm > 0 && (
+          <View style={styles.goalCard}>
+            <View style={styles.goalHeader}>
+              <View style={styles.goalLeft}>
+                <Ionicons name="flag-outline" size={14} color={COLORS.primary} />
+                <Text style={styles.goalTitle}>Weekly Goal</Text>
+              </View>
+              <Text style={styles.goalNumbers}>
+                {weekKm.toFixed(1)} / {goalKm} km
+              </Text>
+            </View>
+            <View style={styles.goalTrack}>
+              <LinearGradient
+                colors={GRADIENTS.primary}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={[styles.goalFill, { width: `${goalProgress * 100}%` }]}
+              />
+            </View>
+            <Text style={styles.goalPercent}>{Math.round(goalProgress * 100)}% complete</Text>
+          </View>
+        )}
+
+        {/* ── QUICK ACTIONS ── */}
         <View style={styles.quickActions}>
-          <TouchableOpacity
-            style={styles.quickAction}
+          <QuickAction
+            icon="people"
+            label="Virtual Run"
+            color={COLORS.secondary}
+            dimColor={COLORS.secondaryDim}
             onPress={() => router.push('/(tabs)/friends')}
-            activeOpacity={0.75}
-          >
-            <View style={[styles.quickActionIcon, { backgroundColor: COLORS.secondaryDim }]}>
-              <Ionicons name="people" size={20} color={COLORS.secondary} />
-            </View>
-            <Text style={styles.quickActionLabel}>Virtual Run</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.quickAction}
+          />
+          <QuickAction
+            icon="trophy"
+            label="Leaderboard"
+            color={COLORS.accent}
+            dimColor={COLORS.accentDim}
             onPress={() => router.push('/(tabs)/leaderboard')}
-            activeOpacity={0.75}
-          >
-            <View style={[styles.quickActionIcon, { backgroundColor: COLORS.accentDim }]}>
-              <Ionicons name="trophy" size={20} color={COLORS.accent} />
-            </View>
-            <Text style={styles.quickActionLabel}>Leaderboard</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.quickAction}
+          />
+          <QuickAction
+            icon="flame"
+            label="Activity Feed"
+            color={COLORS.danger}
+            dimColor={COLORS.dangerGlow}
             onPress={() => router.push('/(tabs)/feed')}
-            activeOpacity={0.75}
-          >
-            <View style={[styles.quickActionIcon, { backgroundColor: COLORS.dangerGlow }]}>
-              <Ionicons name="flame" size={20} color={COLORS.danger} />
-            </View>
-            <Text style={styles.quickActionLabel}>Activity Feed</Text>
-          </TouchableOpacity>
+          />
         </View>
 
-        {/* Recent Runs */}
+        {/* ── RECENT RUNS ── */}
         {(runs as Run[]).length > 0 && (
           <View style={styles.recentSection}>
-            <Text style={styles.sectionTitle}>Recent Runs</Text>
-            {(runs as Run[]).slice(0, 5).map((run) => (
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Recent Activity</Text>
+              <TouchableOpacity onPress={() => router.push('/(tabs)/profile')} activeOpacity={0.7}>
+                <Text style={styles.seeAll}>See all</Text>
+              </TouchableOpacity>
+            </View>
+
+            {(runs as Run[]).slice(0, 5).map((run, i) => (
               <TouchableOpacity
                 key={run.id}
                 onPress={() => router.push(`/run/${run.id}`)}
-                activeOpacity={0.75}
+                activeOpacity={0.72}
+                style={[styles.runRow, i === 0 && styles.runRowFirst]}
               >
-                <Card style={styles.runItem} padding={14}>
-                  <View style={styles.runItemLeft}>
-                    <View style={styles.runIcon}>
-                      <Ionicons name="footsteps" size={18} color={COLORS.primary} />
-                    </View>
-                    <View>
-                      <Text style={styles.runTitle}>{run.title ?? 'Run'}</Text>
-                      <Text style={styles.runDate}>{timeAgo(run.started_at)}</Text>
-                    </View>
-                  </View>
-                  <View style={styles.runItemRight}>
-                    <Text style={styles.runDistance}>{formatDistanceWithUnit(run.distance_km)}</Text>
-                    <Text style={styles.runPace}>{formatPace(run.avg_pace_seconds_per_km ?? null)} /km</Text>
-                  </View>
-                </Card>
+                <View style={styles.runIconBox}>
+                  <Ionicons name="footsteps" size={16} color={COLORS.primary} />
+                </View>
+                <View style={styles.runInfo}>
+                  <Text style={styles.runTitle}>{run.title ?? 'Run'}</Text>
+                  <Text style={styles.runMeta}>
+                    {timeAgo(run.started_at)} · {formatDuration(run.duration_seconds)}
+                  </Text>
+                </View>
+                <View style={styles.runRight}>
+                  <Text style={styles.runDistance}>{formatDistanceWithUnit(run.distance_km)}</Text>
+                  <Text style={styles.runPace}>{formatPace(run.avg_pace_seconds_per_km ?? null)}/km</Text>
+                </View>
               </TouchableOpacity>
             ))}
           </View>
         )}
 
-        <View style={{ height: 100 }} />
+        {(runs as Run[]).length === 0 && (
+          <View style={styles.emptyRuns}>
+            <Ionicons name="footsteps-outline" size={32} color={COLORS.textMuted} />
+            <Text style={styles.emptyText}>No runs yet — go crush it!</Text>
+          </View>
+        )}
+
+        <View style={{ height: 110 }} />
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-function getTimeOfDay() {
-  const h = new Date().getHours();
-  if (h < 12) return 'morning';
-  if (h < 17) return 'afternoon';
-  return 'evening';
+function QuickAction({
+  icon, label, color, dimColor, onPress,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+  color: string;
+  dimColor: string;
+  onPress: () => void;
+}) {
+  return (
+    <TouchableOpacity style={styles.quickAction} onPress={onPress} activeOpacity={0.75}>
+      <View style={[styles.quickActionIcon, { backgroundColor: dimColor, borderColor: `${color}30` }]}>
+        <Ionicons name={icon} size={20} color={color} />
+      </View>
+      <Text style={styles.quickActionLabel}>{label}</Text>
+    </TouchableOpacity>
+  );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.bg },
-  bgGlow: {
-    position: 'absolute',
-    top: 0,
-    left: -50,
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    backgroundColor: COLORS.primaryGlow,
-    opacity: 0.3,
+  container: {
+    flex: 1,
+    backgroundColor: COLORS.bg,
   },
-  scrollContent: { paddingHorizontal: SPACING.md },
+  scrollContent: {
+    paddingHorizontal: SPACING.md,
+  },
+
+  // Header
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingTop: SPACING.md,
+    paddingTop: SPACING.sm,
     paddingBottom: SPACING.lg,
   },
   greeting: {
-    fontSize: FONT_SIZE.md,
+    fontSize: FONT_SIZE.sm,
     color: COLORS.textMuted,
     fontWeight: FONT_WEIGHT.medium,
+    letterSpacing: 0.2,
   },
   name: {
-    fontSize: FONT_SIZE.xxl,
+    fontSize: FONT_SIZE.h3,
     fontWeight: FONT_WEIGHT.black,
     color: COLORS.text,
-    letterSpacing: -0.5,
+    letterSpacing: -0.8,
+    marginTop: 1,
   },
-  weekCard: { marginBottom: SPACING.md },
-  weekStatsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: SPACING.md,
-  },
-  weekStat: { flex: 1, alignItems: 'center' },
-  weekStatValue: {
-    fontSize: FONT_SIZE.xxl,
-    fontWeight: FONT_WEIGHT.extrabold,
-    color: COLORS.text,
-  },
-  weekStatLabel: {
-    fontSize: FONT_SIZE.xs,
-    color: COLORS.textMuted,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginTop: 2,
-  },
-  weekStatDivider: {
-    width: 1,
-    height: 40,
-    backgroundColor: COLORS.border,
-  },
-  goalSection: { marginBottom: SPACING.md },
-  goalHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
-  goalLabel: { fontSize: FONT_SIZE.sm, color: COLORS.textSecondary, fontWeight: FONT_WEIGHT.medium },
-  goalNumbers: { fontSize: FONT_SIZE.sm, color: COLORS.primary, fontWeight: FONT_WEIGHT.bold },
-  goalTrack: {
-    height: 6,
-    backgroundColor: COLORS.border,
-    borderRadius: RADIUS.full,
-    overflow: 'hidden',
-  },
-  goalFill: { height: '100%', borderRadius: RADIUS.full },
-  startRunBtn: {
+
+  // Hero card
+  heroCard: {
     borderRadius: RADIUS.xl,
+    borderWidth: 1,
+    borderColor: 'rgba(0,245,160,0.18)',
+    backgroundColor: '#0C0C1A',
     overflow: 'hidden',
-    marginBottom: SPACING.md,
-    ...{
-      shadowColor: COLORS.primary,
-      shadowOffset: { width: 0, height: 6 },
-      shadowOpacity: 0.4,
-      shadowRadius: 20,
-      elevation: 10,
-    },
+    marginBottom: SPACING.sm,
+    shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 24,
+    elevation: 10,
   },
-  startRunGradient: {
+  heroContent: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: SPACING.lg,
-    gap: SPACING.md,
+    paddingVertical: 28,
   },
-  startRunIconWrapper: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: 'rgba(7,7,17,0.2)',
+  heroStats: {
+    flex: 1,
+  },
+  heroWeekLabel: {
+    fontSize: 9,
+    color: COLORS.textMuted,
+    fontWeight: FONT_WEIGHT.bold,
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+    marginBottom: 4,
+  },
+  heroKmValue: {
+    fontSize: 54,
+    fontWeight: FONT_WEIGHT.black,
+    color: COLORS.text,
+    letterSpacing: -2,
+    lineHeight: 56,
+  },
+  heroKmUnit: {
+    fontSize: FONT_SIZE.sm,
+    color: COLORS.textMuted,
+    fontWeight: FONT_WEIGHT.medium,
+    letterSpacing: 1,
+    marginTop: 2,
+  },
+  heroStatsDivider: {
+    width: 20,
+    height: 1,
+    backgroundColor: COLORS.border,
+    marginVertical: 12,
+  },
+  heroRunCount: {
+    fontSize: FONT_SIZE.xl,
+    fontWeight: FONT_WEIGHT.extrabold,
+    color: COLORS.text,
+  },
+  heroRunLabel: {
+    fontSize: FONT_SIZE.xs,
+    color: COLORS.textMuted,
+    fontWeight: FONT_WEIGHT.medium,
+    letterSpacing: 0.5,
+    marginTop: 1,
+  },
+  heroSeparator: {
+    width: 1,
+    height: 80,
+    backgroundColor: COLORS.border,
+    marginHorizontal: SPACING.lg,
+  },
+  heroAction: {
+    alignItems: 'center',
+    gap: 10,
+  },
+  heroPlayRing: {
+    width: 76,
+    height: 76,
+    borderRadius: 38,
+    overflow: 'hidden',
+    shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.55,
+    shadowRadius: 18,
+    elevation: 14,
+  },
+  heroPlayGradient: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  startRunTitle: {
-    fontSize: FONT_SIZE.xl,
+  heroStartLabel: {
+    fontSize: 10,
     fontWeight: FONT_WEIGHT.black,
-    color: '#070711',
-    letterSpacing: -0.3,
+    color: COLORS.text,
+    letterSpacing: 2,
+    textTransform: 'uppercase',
   },
-  startRunSub: { fontSize: FONT_SIZE.sm, color: 'rgba(7,7,17,0.6)' },
+  heroStartSub: {
+    fontSize: 9,
+    color: COLORS.textMuted,
+    letterSpacing: 0.5,
+    marginTop: -4,
+  },
+
+  // Goal card
+  goalCard: {
+    backgroundColor: COLORS.bgCard,
+    borderRadius: RADIUS.lg,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    padding: 14,
+    marginBottom: SPACING.md,
+  },
+  goalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  goalLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  goalTitle: {
+    fontSize: FONT_SIZE.sm,
+    color: COLORS.textSecondary,
+    fontWeight: FONT_WEIGHT.semibold,
+  },
+  goalNumbers: {
+    fontSize: FONT_SIZE.sm,
+    color: COLORS.primary,
+    fontWeight: FONT_WEIGHT.bold,
+  },
+  goalTrack: {
+    height: 5,
+    backgroundColor: COLORS.border,
+    borderRadius: RADIUS.full,
+    overflow: 'hidden',
+    marginBottom: 6,
+  },
+  goalFill: {
+    height: '100%',
+    borderRadius: RADIUS.full,
+  },
+  goalPercent: {
+    fontSize: 10,
+    color: COLORS.textMuted,
+    fontWeight: FONT_WEIGHT.medium,
+    letterSpacing: 0.3,
+  },
+
+  // Quick actions
   quickActions: {
     flexDirection: 'row',
     gap: SPACING.sm,
@@ -364,44 +451,105 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.bgCard,
     borderRadius: RADIUS.lg,
     alignItems: 'center',
-    paddingVertical: SPACING.md,
+    paddingVertical: 14,
     gap: SPACING.sm,
     borderWidth: 1,
     borderColor: COLORS.border,
   },
   quickActionIcon: {
-    width: 44,
-    height: 44,
+    width: 42,
+    height: 42,
     borderRadius: RADIUS.md,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
   },
   quickActionLabel: {
-    fontSize: FONT_SIZE.xs,
+    fontSize: 10,
     color: COLORS.textSecondary,
-    fontWeight: FONT_WEIGHT.medium,
+    fontWeight: FONT_WEIGHT.semibold,
     textAlign: 'center',
+    letterSpacing: 0.2,
   },
-  recentSection: { gap: SPACING.sm },
+
+  // Recent runs
+  recentSection: {
+    gap: 0,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: SPACING.sm,
+  },
   sectionTitle: {
     fontSize: FONT_SIZE.lg,
     fontWeight: FONT_WEIGHT.bold,
     color: COLORS.text,
-    marginBottom: SPACING.xs,
+    letterSpacing: -0.3,
   },
-  runItem: { marginBottom: 0 },
-  runItemLeft: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, flex: 1 },
-  runIcon: {
+  seeAll: {
+    fontSize: FONT_SIZE.sm,
+    color: COLORS.primary,
+    fontWeight: FONT_WEIGHT.semibold,
+  },
+  runRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    paddingVertical: 13,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+  },
+  runRowFirst: {
+    borderTopColor: 'transparent',
+  },
+  runIconBox: {
     width: 36,
     height: 36,
     borderRadius: RADIUS.sm,
     backgroundColor: COLORS.primaryDim,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(0,245,160,0.15)',
   },
-  runTitle: { fontSize: FONT_SIZE.md, fontWeight: FONT_WEIGHT.semibold, color: COLORS.text },
-  runDate: { fontSize: FONT_SIZE.xs, color: COLORS.textMuted, marginTop: 1 },
-  runItemRight: { alignItems: 'flex-end' },
-  runDistance: { fontSize: FONT_SIZE.md, fontWeight: FONT_WEIGHT.bold, color: COLORS.primary },
-  runPace: { fontSize: FONT_SIZE.xs, color: COLORS.textMuted, marginTop: 1 },
+  runInfo: {
+    flex: 1,
+  },
+  runTitle: {
+    fontSize: FONT_SIZE.md,
+    fontWeight: FONT_WEIGHT.semibold,
+    color: COLORS.text,
+  },
+  runMeta: {
+    fontSize: FONT_SIZE.xs,
+    color: COLORS.textMuted,
+    marginTop: 2,
+  },
+  runRight: {
+    alignItems: 'flex-end',
+  },
+  runDistance: {
+    fontSize: FONT_SIZE.md,
+    fontWeight: FONT_WEIGHT.bold,
+    color: COLORS.primary,
+  },
+  runPace: {
+    fontSize: FONT_SIZE.xs,
+    color: COLORS.textMuted,
+    marginTop: 2,
+  },
+
+  // Empty state
+  emptyRuns: {
+    alignItems: 'center',
+    paddingVertical: SPACING.xxl,
+    gap: SPACING.sm,
+  },
+  emptyText: {
+    fontSize: FONT_SIZE.md,
+    color: COLORS.textMuted,
+    fontWeight: FONT_WEIGHT.medium,
+  },
 });
