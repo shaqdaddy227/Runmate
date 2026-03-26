@@ -86,7 +86,7 @@ export default function HomeScreen() {
         <View style={styles.header}>
           <View>
             <Text style={styles.greeting}>Good {getTimeOfDay()},</Text>
-            <Text style={styles.name}>{firstName} 👋</Text>
+            <Text style={styles.name}>{firstName}</Text>
           </View>
           <TouchableOpacity
             onPress={() => router.push('/(tabs)/profile')}

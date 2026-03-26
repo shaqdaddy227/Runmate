@@ -26,7 +26,7 @@ const PERIOD_LABELS: Record<Period, string> = {
 };
 
 const RANK_COLORS = ['#FFD700', '#C0C0C0', '#CD7F32'];
-const RANK_EMOJIS = ['🥇', '🥈', '🥉'];
+const RANK_ICONS: Array<'trophy' | 'medal' | 'ribbon'> = ['trophy', 'medal', 'ribbon'];
 
 export default function LeaderboardScreen() {
   const { profile } = useAuth();
@@ -113,7 +113,7 @@ export default function LeaderboardScreen() {
           }
           ListEmptyComponent={
             <View style={styles.centered}>
-              <Text style={styles.emptyEmoji}>🏃</Text>
+              <Ionicons name="footsteps-outline" size={40} color={COLORS.textMuted} />
               <Text style={styles.emptyText}>No data yet — start running!</Text>
             </View>
           }
@@ -135,7 +135,7 @@ function PodiumEntry({
 }) {
   return (
     <View style={[podiumStyles.container, elevated && podiumStyles.elevated]}>
-      <Text style={podiumStyles.rankEmoji}>{RANK_EMOJIS[rank - 1]}</Text>
+      <Ionicons name={RANK_ICONS[rank - 1]} size={20} color={RANK_COLORS[rank - 1]} />
       <Avatar uri={entry.avatar_url} name={entry.full_name ?? entry.username} size={elevated ? 'lg' : 'md'} showBorder />
       <Text style={podiumStyles.name} numberOfLines={1}>
         {entry.full_name ?? entry.username}
@@ -271,7 +271,6 @@ const styles = StyleSheet.create({
     paddingTop: 80,
     gap: SPACING.sm,
   },
-  emptyEmoji: { fontSize: 40 },
   emptyText: { fontSize: FONT_SIZE.md, color: COLORS.textMuted },
 });
 
@@ -285,7 +284,6 @@ const podiumStyles = StyleSheet.create({
     marginBottom: 0,
     paddingBottom: 20,
   },
-  rankEmoji: { fontSize: 20 },
   name: {
     fontSize: FONT_SIZE.xs,
     fontWeight: FONT_WEIGHT.semibold,

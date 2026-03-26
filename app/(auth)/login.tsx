@@ -12,6 +12,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../lib/supabase';
 import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
@@ -69,7 +70,7 @@ export default function LoginScreen() {
               end={{ x: 1, y: 1 }}
               style={styles.logoIcon}
             >
-              <Text style={styles.logoEmoji}>🏃</Text>
+              <Ionicons name="flash" size={36} color="#070711" />
             </LinearGradient>
             <Text style={styles.logoText}>RunMate</Text>
             <Text style={styles.logoTagline}>Run together, anywhere.</Text>
@@ -182,9 +183,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: SPACING.md,
-  },
-  logoEmoji: {
-    fontSize: 36,
   },
   logoText: {
     fontSize: FONT_SIZE.h2,

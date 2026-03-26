@@ -96,7 +96,7 @@ export default function SignupScreen() {
           {/* Header */}
           <View style={styles.header}>
             <LinearGradient colors={['#00F5A0', '#00C9FF']} style={styles.logoIcon}>
-              <Text style={styles.logoEmoji}>🏃</Text>
+              <Ionicons name="flash" size={28} color="#070711" />
             </LinearGradient>
             <Text style={styles.title}>Create Account</Text>
             <Text style={styles.subtitle}>Join thousands of runners worldwide</Text>
@@ -225,7 +225,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: SPACING.sm,
   },
-  logoEmoji: { fontSize: 28 },
   title: {
     fontSize: FONT_SIZE.h3,
     fontWeight: FONT_WEIGHT.black,

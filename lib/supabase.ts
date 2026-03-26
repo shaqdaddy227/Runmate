@@ -38,15 +38,26 @@ export async function fetchFeed(userId: string, page = 0, limit = 20) {
     .select(`
       *,
       profile:profiles!runs_user_id_fkey(*),
-      like_count:likes(count),
-      comment_count:comments(count),
-      user_has_liked:likes!inner(user_id)
+      likes_agg:likes(count),
+      comments_agg:comments(count),
+      user_likes:likes(user_id)
     `)
     .order('created_at', { ascending: false })
     .range(page * limit, (page + 1) * limit - 1);
 
   if (error) throw error;
-  return data;
+
+  return (data ?? []).map((run: any) => ({
+    ...run,
+    like_count: Number(run.likes_agg?.[0]?.count ?? 0),
+    comment_count: Number(run.comments_agg?.[0]?.count ?? 0),
+    user_has_liked: Array.isArray(run.user_likes)
+      ? run.user_likes.some((l: any) => l.user_id === userId)
+      : false,
+    likes_agg: undefined,
+    comments_agg: undefined,
+    user_likes: undefined,
+  }));
 }
 
 // Helper: fetch runs for a user

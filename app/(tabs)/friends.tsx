@@ -144,9 +144,11 @@ export default function FriendsScreen() {
               contentContainerStyle={styles.listContent}
               ListEmptyComponent={
                 <View style={styles.emptyState}>
-                  <Text style={styles.emptyEmoji}>
-                    {activeTab === 'following' ? '👥' : '🔍'}
-                  </Text>
+                  <Ionicons
+                    name={activeTab === 'following' ? 'people-outline' : 'search-outline'}
+                    size={40}
+                    color={COLORS.textMuted}
+                  />
                   <Text style={styles.emptyText}>
                     {activeTab === 'following'
                       ? 'Find runners to follow'
@@ -250,7 +252,7 @@ function VirtualRoomsTab({
 
       {(rooms as any[]).length === 0 ? (
         <View style={styles.emptyState}>
-          <Text style={styles.emptyEmoji}>🏃‍♂️</Text>
+          <Ionicons name="people-outline" size={40} color={COLORS.textMuted} />
           <Text style={styles.emptyText}>No active virtual runs right now</Text>
         </View>
       ) : (
@@ -345,7 +347,7 @@ const styles = StyleSheet.create({
     marginTop: 60,
     gap: SPACING.sm,
   },
-  emptyEmoji: { fontSize: 40 },
+
   emptyText: { fontSize: FONT_SIZE.md, color: COLORS.textMuted },
   createRoomBtn: {
     marginHorizontal: SPACING.md,

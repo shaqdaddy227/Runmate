@@ -61,7 +61,9 @@ export default function FeedScreen() {
         </View>
       ) : (runs as Run[]).length === 0 ? (
         <View style={styles.centered}>
-          <Text style={styles.emptyEmoji}>🏃</Text>
+          <View style={styles.emptyIcon}>
+            <Ionicons name="footsteps-outline" size={40} color={COLORS.textMuted} />
+          </View>
           <Text style={styles.emptyTitle}>No activity yet</Text>
           <Text style={styles.emptySubtitle}>Follow friends to see their runs here</Text>
         </View>
@@ -121,7 +123,7 @@ export default function FeedScreen() {
             <View style={styles.commentInputWrapper}>
               <TextInput
                 style={styles.commentInput}
-                placeholder="Great run! 🔥"
+                placeholder="Great run!"
                 placeholderTextColor={COLORS.textMuted}
                 value={commentText}
                 onChangeText={setCommentText}
@@ -189,7 +191,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: SPACING.sm,
   },
-  emptyEmoji: { fontSize: 48 },
+  emptyIcon: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: COLORS.bgCard,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
   emptyTitle: {
     fontSize: FONT_SIZE.xl,
     fontWeight: FONT_WEIGHT.bold,
