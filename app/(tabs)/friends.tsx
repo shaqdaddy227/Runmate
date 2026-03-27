@@ -67,7 +67,7 @@ export default function FriendsScreen() {
     setCreatingRoom(true);
     try {
       const room = await createVirtualRoom(profile.id, `${profile.username}'s Run`);
-      router.push('/active-run');
+      router.push({ pathname: '/active-run', params: { roomId: room.id } });
     } catch (e) {
       Alert.alert('Error', 'Failed to create virtual run room');
     } finally {
@@ -211,6 +211,7 @@ function VirtualRoomsTab({
   creatingRoom: boolean;
   userId?: string;
 }) {
+  const router = useRouter();
   const { data: rooms = [] } = useQuery({
     queryKey: ['virtualRooms'],
     queryFn: async () => {
@@ -268,7 +269,11 @@ function VirtualRoomsTab({
                   <Text style={styles.roomHost}>Hosted by @{item.host?.username}</Text>
                 </View>
               </View>
-              <TouchableOpacity style={styles.joinBtn} activeOpacity={0.75}>
+              <TouchableOpacity
+                style={styles.joinBtn}
+                activeOpacity={0.75}
+                onPress={() => router.push({ pathname: '/active-run', params: { roomId: item.id } })}
+              >
                 <Text style={styles.joinBtnText}>Join</Text>
               </TouchableOpacity>
             </Card>

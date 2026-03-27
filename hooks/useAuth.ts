@@ -11,7 +11,7 @@ export function useAuth() {
       setSession(session);
       if (session?.user) {
         fetchProfile(session.user.id)
-          .then(setProfile)
+          .then((p) => { if (p) setProfile(p); })
           .catch(console.error)
           .finally(() => setLoading(false));
       } else {
@@ -26,7 +26,7 @@ export function useAuth() {
         if (session?.user) {
           try {
             const profile = await fetchProfile(session.user.id);
-            setProfile(profile);
+            if (profile) setProfile(profile);
           } catch {
             // Profile may not exist yet — will be created on signup
           }
@@ -48,7 +48,7 @@ export function useAuth() {
   const refreshProfile = async () => {
     if (!session?.user) return;
     const updated = await fetchProfile(session.user.id);
-    setProfile(updated);
+    if (updated) setProfile(updated);
   };
 
   return {

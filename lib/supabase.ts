@@ -20,13 +20,13 @@ export async function getCurrentUserId(): Promise<string | null> {
   return data.session?.user?.id ?? null;
 }
 
-// Helper: fetch profile
+// Helper: fetch profile (returns null if not found yet)
 export async function fetchProfile(userId: string) {
   const { data, error } = await supabase
     .from('profiles')
     .select('*')
     .eq('id', userId)
-    .single();
+    .maybeSingle();
   if (error) throw error;
   return data;
 }

@@ -13,13 +13,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { supabase } from '../../lib/supabase';
+import { supabase, fetchProfile } from '../../lib/supabase';
+import { useAuthStore } from '../../store/authStore';
 import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
 import { COLORS, FONT_SIZE, FONT_WEIGHT, SPACING, RADIUS } from '../../constants/theme';
 
 export default function SignupScreen() {
   const router = useRouter();
+  const { setProfile } = useAuthStore();
   const [fullName, setFullName] = useState('');
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
@@ -67,8 +69,21 @@ export default function SignupScreen() {
         email,
       });
       if (profileError) {
-        console.error('Profile creation error:', profileError);
+        // If username conflict, let user know
+        if (profileError.code === '23505') {
+          setLoading(false);
+          Alert.alert('Username Taken', 'That username is already in use. Please choose another.');
+          await supabase.auth.signOut();
+          return;
+        }
+        setLoading(false);
+        Alert.alert('Account Setup Failed', 'Your account was created but profile setup failed. Please try logging in.');
+        return;
       }
+
+      // Load profile into store so app doesn't wait for auth state change
+      const profile = await fetchProfile(data.user.id);
+      if (profile) setProfile(profile);
     }
 
     setLoading(false);

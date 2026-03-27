@@ -11,7 +11,7 @@ import MapView, { Polyline, Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import Animated, {
   useSharedValue,
@@ -28,7 +28,9 @@ import { COLORS, DARK_MAP_STYLE, GRADIENTS } from '../constants/theme';
 
 export default function ActiveRunScreen() {
   const router = useRouter();
+  const { roomId } = useLocalSearchParams<{ roomId?: string }>();
   const mapRef = useRef<MapView>(null);
+  const startedRef = useRef(false);
 
   const {
     isRunning,
@@ -88,10 +90,11 @@ export default function ActiveRunScreen() {
     opacity: slideUp.value,
   }));
 
-  // Auto-start on mount
+  // Auto-start on mount — guard against double invocation
   useEffect(() => {
-    if (!isRunning) {
-      startRun();
+    if (!isRunning && !startedRef.current) {
+      startedRef.current = true;
+      startRun(roomId ?? undefined);
     }
   }, []);
 

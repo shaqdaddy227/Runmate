@@ -4,7 +4,7 @@ import * as Haptics from 'expo-haptics';
 import { useRunStore } from '../store/runStore';
 import { useLocation } from './useLocation';
 import { haversineDistance, estimateCalories, calculatePace, generateRunTitle } from '../lib/utils';
-import { saveRun, updateLiveLocation } from '../lib/supabase';
+import { saveRun, updateLiveLocation, fetchProfile } from '../lib/supabase';
 import { getLatestHeartRate, saveRunToHealth } from '../lib/health';
 import { useAuthStore } from '../store/authStore';
 import { RoutePoint } from '../types';
@@ -59,10 +59,11 @@ export function useRun() {
     }
   }, []);
 
-  // Broadcast live location to virtual room
+  // Broadcast live location to virtual room (only when not paused)
   const startLiveBroadcast = useCallback((roomId: string, userId: string) => {
     liveLocationRef.current = setInterval(() => {
-      const { distanceKm, durationSeconds, routePoints } = useRunStore.getState();
+      const { distanceKm, durationSeconds, routePoints, isPaused } = useRunStore.getState();
+      if (isPaused) return;
       const last = routePoints[routePoints.length - 1];
       if (!last) return;
       updateLiveLocation(userId, roomId, last.latitude, last.longitude, distanceKm, durationSeconds).catch(console.error);
@@ -121,12 +122,18 @@ export function useRun() {
   const pauseRun = useCallback(async () => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     store.pauseRun();
-  }, []);
+    stopTracking();
+    if (locationUnsub.current) {
+      locationUnsub.current();
+      locationUnsub.current = null;
+    }
+  }, [stopTracking]);
 
   const resumeRun = useCallback(async () => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     store.resumeRun();
-  }, []);
+    locationUnsub.current = await startTracking(handleLocationUpdate);
+  }, [startTracking, handleLocationUpdate]);
 
   const stopRun = useCallback(async () => {
     const state = useRunStore.getState();
@@ -170,6 +177,10 @@ export function useRun() {
         is_virtual: !!state.virtualRoomId,
         virtual_room_id: state.virtualRoomId ?? undefined,
       });
+
+      // Refresh profile stats in store so home screen shows updated totals
+      const updatedProfile = await fetchProfile(profile.id);
+      if (updatedProfile) useAuthStore.getState().setProfile(updatedProfile);
 
       store.resetRun();
       return saved;
